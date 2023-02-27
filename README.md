@@ -28,7 +28,7 @@ If you already have a running IP PBX, you can pass installation steps. If you ex
 
 # Armbian installation on H96 Mini (Seach internet for more resources)
 - !!! Caution, steps below may harm your Android TV and can cause reboot loops or other severe issues !!!
-- If you don't know how to restore/programm original H96 Mini Rom, do not forward!
+- If you don't have a original ROM image and you don't know how to use 'Amlogic USB Burning Tool 2.2.0', do not forward!
 
 Connect to a TV or monitor your H96 Mini then open and find its IP address.
 From https://github.com/ophub/amlogic-s9xxx-armbian/releases download Armbian_23.02.0_amlogic_s905w_bullseye_5.15.XX_server_YYYY.MM.DD.img.
