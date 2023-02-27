@@ -1,0 +1,165 @@
+Connexant Modem Data
+
+*****************************************************************
+Table: Voice Commands
+
+Command Function Configuration
++FCLASS Set Mode
++VCID Caller ID (CID)
++VNH Automatic Hang-up control
++FMI? Manufacturer Identification
++FMM? Product Identification
++FMR? Version, Revision, etc.
++FLO Flow Control
+	Voice
++VIP Voice Initialize All Parameters
++VRX Start modem Receive (Record)
++VTS Voice Tone Send (Send single frequency or DTMF)
++VTX Start modem Transmit (Playback)
++VGR Voice Gain Receive (Record Gain)
++VGT Voice Gain Transmit (Playback Volume)
++VIT Voice Inactivity Timer (DTE/Modem)
++VLS Analog Source/Destination Selection
++VRA Ringback Goes Away Timer
++VRN Ringback Never Appeared Timer
++VSD Silence Detection (QUIET & SILENCE)
++VSM Compression Method Selection
++VTD Beep Tone Duration Timer
++VDR Distinctive Ring
++VDT Control Tone Cadence Reporting
++VPR Select DTE/modem Interface Rate (Turn off autobaud)
+	Speakerphone
++VSP Speakerphone ON/OFF
++VDX Speakerphone Duplex Mode
++VGM Microphone Gain
++VGS Speaker Gain
+
+*****************************************************************
+Table: Supported <DLE> Shielded Codes Sent to the DTE
+
+Code  /  T.50 Equivalent  /  Event Report Description
+<DLE> (1/0) Two contiguous <DLE><DLE> codes indicate a single <DLE> in the data stream
+<SUB> (1/10) <DLE><DLE> in the data stream
+<ETX> (0/3) End Data State
+X (5/8) Packet Header for the “Complex Event Detection Report”
+. (2/14) Packet Terminator for the “Complex Event Detection Report”
+/ (2/15) Start of DTMF tone shielding
+~ (7/15) DTMF transitions to off
+R (5/2) Ring
+1 (3/1) DTMF 1
+2 (3/2) DTMF 2
+3 (3/3) DTMF 3
+4 (3/4) DTMF 4
+5 (3/5) DTMF 5
+6 (3/6) DTMF 6
+7 (3/7) DTMF 7
+8 (3/8) DTMF 8
+9 (3/9) DTMF 9
+0 (3/0) DTMF 0
+A (4/1) Extended Keypad DTMF A
+B (4/2) Extended Keypad DTMF B
+C (4/3) Extended Keypad DTMF C
+D (4/4) Extended Keypad DTMF D
+* (2/10) Extended Keypad DTMF E
+# (2/3) Extended Keypad DTMF F
+o (6/15) Receive Buffer Overrun
+c (6/3) Facsimile Calling
+e (6/5) Data Calling
+h (6/8) Line Current Break (local phone goes on-hook)
+H (4/8) Line Current Detected (local phone goes off-hook)
+s (7/3) “Presumed Hangup”(SILENCE) Time-out
+q (7/1) “Presumed End of Message” (QUIET) Time-out
+J (4/10) SIT Signal
+l (6/12) Loop Current Interruption
+r (7/2) Ringing Tone
+b (6/2) BUSY
+d (6/4) DIAL TONE
+u (7/5) Transmit Buffer Underrun
+p (7/0) Line voltage increase
+P (5/0) Line voltage decrease (extension pickup)
+a (6/1) Facsimile or Data Answer
+f (6/6) Data Answer
+
+*****************************************************************
+Table: Supported <DLE> Shielded Codes Sent to the Modem (DCE)
+
+Code  /  Code  /  Simple Action Command Description
+<DLE> (1/0) Two contiguous <DLE><DLE> codes indicate a single <DLE> in the data stream ("Immediate Command" or "Stream Command").
+u (7/5) [Action Numbers 0 and 3] Increase the volume or gain by one unit ("Immediate Command").
+d (6/4) [Action Numbers 1 and 4] Decrease the volume or gain by one unit ("Immediate Command").
+p (7/0) [Action Number 9] Pause.
+r (7/2) [Action Number 10] Resume.
+<ETX> (0/3) [Action Number 11] End Voice Transmit State ("Stream Command").
+<CAN> (1/8) [Action Number 12] Clear transmit buffer of voice data ("Immediate Command").
+! (2/1) [Action Number 15] Receive abort ("Immediate Command").
+
+
+
+*****************************************************************
+Table: Default Countries Supported
+
+Country	Country Code
+Argentina 7
+Australia 9
+Austria 0A
+Belgium 0F
+Brazil 16
+Bulgaria 1B
+Canada 20
+Chile 25
+China 26
+Colombia 27
+Croatia FA
+Cyprus 2D
+Czech Republic 2E
+Denmark 31
+Egypt 36
+Estonia F9
+Finland 3C
+France 3D
+Germany 42
+Greece 46
+Hong Kong 50
+Hungary 51
+Iceland 52
+India 53
+Indonesia 54
+Ireland 57
+Israel 58
+Italy 59
+Japan 00
+Korea 61
+Kuwait 62
+Lebanon 64
+Luxembourg 69
+Malaysia 6C
+Mexico 73
+Morocco 77
+Netherlands 7B
+New Zealand 7E
+Norway 82
+Pakistan 84
+Philippines 89
+Poland 8A
+Portugal 8B
+Romania 8E
+Russia B8
+Saudi Arabia 98
+Senegal 99
+Singapore 9C
+Slovakia FB
+Slovenia FC
+South Africa 9F
+Spain A0
+Sri Lanka A1
+Sweden A5
+Switzerland A6
+Taiwan FE
+Thailand A9
+Tunisia AD
+Turkey AE
+UK B4
+United Arab Emirates B3
+Uruguay B7
+USA B5
+Reserved FD
