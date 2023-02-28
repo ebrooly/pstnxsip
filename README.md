@@ -1,7 +1,14 @@
 # pstnxsip
 
-This project aims to implement an IP PBX with an FXO interface to PSTN analog line using a USB modem. Those provide to call PSTN numbers from and to answer PSTN calls from VoIP client running on mobile phone.
+This project aims to implement an IP PBX with an FXO interface to PSTN analog phone line using a USB modem. Those provide to call PSTN numbers from and to answer PSTN calls from VoIP client running on mobile phone.
 
+# Functions
+- PSTN-VoIP Gateway:
+User can use PSTN analog phone from a mobile phone. Requires two SIP accounts. Mobile phone SIP client application must support 'push'. 
+- IP FXO:
+IP PBX can be configured to use this client's internal number as a trunk. (See Asterisk config files)
+- IVR or answering/recording machine:
+Actual code can record calls in the folder code runnig. For other functions, coding required.
 
 # Known Issues
 First, there is a few free VoIP client supports running in the background/lock screen after Apple and Google's mobile device power consumption policy change. Your VoIP client and VoIP provider must support push notification.    
@@ -10,6 +17,7 @@ Second, USB Modem does not support echo cancellation in 'Voice Mode'. Tried to i
 
 Made many changes on codes found on github to make resource optimization. Still there are some points. For example, there is no audio buffer. This causes modem transmit buffer underruns sometimes and produces some noise.
 
+For security concerns you may need to add a check in the code when IP phone receives 'INVITE' message; if calling user is the same account you have -or authorized-. 
 
 # Thanks to:
 - https://github.com/ophub for amlogic-s9xxx-armbian/releases
@@ -32,21 +40,17 @@ After default installation, delete all config files and copy only four from proj
 
 # Armbian installation on H96 Mini (Seach internet for more resources)
 ### !!! Caution, steps below may harm your Android TV and can cause reboot loops or other severe issues !!!
-If you don't have a original ROM image and you don't know how to use 'Amlogic USB Burning Tool 2.2.0', do not forward!
+If you don't have an original ROM image and you don't know how to use 'Amlogic USB Burning Tool 2.2.0', do not forward!
 
 Connect to a TV or monitor your H96 Mini then open and find its IP address.
 
 From https://github.com/ophub/amlogic-s9xxx-armbian/releases download Armbian_23.02.0_amlogic_s905w_bullseye_5.15.XX_server_YYYY.MM.DD.img.
 
-Use proper image tool to prepare SD card or USB memory:
+Use proper image tool to prepare SD card or USB memory: in Windows systems you can use Rufus, in Linux systems you can use 'sudo dd if=XXX.img of=/dev/sdX' (X for related disk)
 
-  in Windows systems you can use Rufus
+Connect your SD card or USB memory (8 GB is enough without recording) to H96 Mini then find 'Update & Backup' utility in menu and try if it can find the bootloader. If it couldn't try steps below:
 
-  in Linux systems you can use 'sudo dd if=XXX.img of=/dev/sdX' (X for related disk)
-
-Connect your SD card or USB memory to H96 Mini then find 'Update & Backup' utility in menu and try if it can find the bootloader. If it couldn't try steps below:
-
-  - Install android 'adb' utility from Google (Android\Sdk\platform-tools) then run
+Install android 'adb' utility from Google (Android\Sdk\platform-tools) then run
 
 'adb connect H96_Mini_IP_address'
 
@@ -54,15 +58,20 @@ Connect your SD card or USB memory to H96 Mini then find 'Update & Backup' utili
 
 'reboot update' (reboots to Armbian)
 
-  - After reboot, Armbian first config will runs and asks for some parameters. Set a strong root password and add another user if you prefer. Run 'sudo armbian-config' and
+After reboot, Armbian first config will runs and asks for some parameters. Set a strong root password and add another user if you prefer.
 
-Change CPU speed to '500-1200' and governor to 'performance'
-    
-Disable 'IPV6 support'
+Run 'sudo armbian-config' then change; CPU speed to '500-1200', governor to 'performance', disable 'IPV6 support'.
 
-Select 'Wi-Fi Config' and connect to a Wi-Fi network
+If you plan to use Wi-Fi: Select 'Wi-Fi Config' and connect to a Wi-Fi network, exit from armbian-config and reboot to check if Wi-Fi is still working. (Wi-Fi rarely works with Armbian on this android TV models)
 
-Exit from armbian-config and reboot to check if Wi-Fi is still working. (Wi-Fi rarely works with Armbian on this android TV models)
+Set static IP address, Hostname, Change Date/Time, Locale and Keyboard settings. If keyboard setting does not work properly run 'sudo nano /etc/default/keyboard' and edit lines (for TR, Turkish Q)
+
+	XKBMODEL="pc105"
+	XKBLAYOUT="tr"
+	XKBVARIANT="intl"
+
+To check if all disk size is utilizing use 'df' and 'lsblk -f' commands. If you need to extend partition size use: https://access.redhat.com/articles/1190213
+
 
 (to be continued)
 
