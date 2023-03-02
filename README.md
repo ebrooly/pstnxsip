@@ -32,8 +32,10 @@ Any board with enough resource (CPU speed, run time memory, program memory and U
 Modem must be a 'Voice Modem', if modem does not support 'Voice Mode' (+FCLASS=8) can not be used.
 ### Asterisk 16 LTS IP PBX:
 After default installation, delete all config files and copy only four from project 'asterisk' folder. If you already have a running IP PBX, you can pass installation steps. If you experienced with Asterisk you can add/remove features. Do not use Playback() routine in dial plan if you want to use hunt group with this project.
-### Python3: python3-pip, pyserial modules.
-### pstnxsip files: common.py, ip_phone.py, line.py, pstnxsip.py, dial.wav, ringback.wav
+### Python3:
+python3-pip, pyserial modules.
+### pstnxsip files:
+common.py, ip_phone.py, line.py, pstnxsip.py, dial.wav, ringback.wav
 
 
 # Armbian installation on H96 Mini (Search internet for more resources)
