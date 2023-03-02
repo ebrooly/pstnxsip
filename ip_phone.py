@@ -471,133 +471,133 @@ class IPPhone:
 		if (self.state == common.PS_INACTIVE):  # if not registered yet
 			return
 		self.msg = msg
-		if (call_id == self.call_id):  # call already initiated
-			self.response_timer = 0  # got a message
-		if (msg.msg_type == SIP_REQUEST):
-			if ('Contact' in msg.headers):
-				first = msg.headers['Contact'].split('sip:')
-				second = first[1].split('>')
-				if (len(second) > 1):
-					self.other_contact = second[0]
-				else:
-					self.other_contact = second
-			if (msg.method == 'INVITE'):  # should be a re-INVITE (this code may not be working!)
+		if (call_id != self.call_id):  # unknown call
+			if (msg.method == 'INVITE'):
 				if (self.state == common.PS_IDLE):
+					if ('Contact' in msg.headers):
+						first = msg.headers['Contact'].split('sip:')
+						second = first[1].split('>')
+						if (len(second) > 1):
+							self.other_contact = second[0]
+						else:
+							self.other_contact = second
 					self.call_id = call_id
 					self.my_tag = self.gen_tag()
 					self.other_user = msg.headers['From']['address']
 					self.other_tag = msg.headers['From']['tag']
+					if ((common.LOCAL_PBX == False) and (self.other_user != common.CALL_FORWARD_TO)):  # only one address can connect and make outbound calls when connected to public VoIP
+						self.sip_send(self.build_resp(SS_BUSY_HERE))
+						return
 					if (common.IP_PHONE_CID_IS_NUMBER):  # invitee's (this process) caller id is using as dial out number
 						self.ip_cid = msg.headers['To']['cid']  # check invitee's caller ID is a number or not, clear if not
 					self.rtp_local_port = self.request_port()
 					self.state = common.PS_RINGING
 					self.sip_send(self.build_resp(SS_RINGING))
-				elif (self.state == common.PS_CONNECTED):  # call already connected
-					if (call_id == self.call_id):  # call already initiated
-						self.my_tag = msg.headers['To']['tag']
-						self.other_user = msg.headers['From']['address']
-						self.other_tag = msg.headers['From']['tag']
-						self.create_rtp_clients()
-						self.sip_send(self.build_resp(SS_OK))
-					else:
-						self.sip_send(self.build_resp(SS_BUSY_HERE))
+				else:
+					self.sip_send(self.build_resp(SS_BUSY_HERE))
+			else:
+				self.unhandled_SIP_message(':ip_phone.handler: SIP_RESPONSE -Unknown call-')
+			return
+		self.response_timer = 0  # got a message
+		if ('Contact' in msg.headers):
+			first = msg.headers['Contact'].split('sip:')
+			second = first[1].split('>')
+			if (len(second) > 1):
+				self.other_contact = second[0]
+			else:
+				self.other_contact = second
+		if (msg.msg_type == SIP_REQUEST):
+			if (msg.method == 'INVITE'):  # should be a re-INVITE (this code may not be working!)
+				if (self.state == common.PS_CONNECTED):  # call already connected
+					self.create_rtp_clients()
+					self.sip_send(self.build_resp(SS_OK))
 			elif (msg.method == 'BYE'):  # Call terminated normally
-				self.sip_send(self.build_resp(SS_OK))
-				if ((self.state == common.PS_CONNECTED) and (call_id == self.call_id)):
+				if (self.state == common.PS_CONNECTED):
+					self.sip_send(self.build_resp(SS_OK))
 					self.delete_call()
 			elif (msg.method == 'CANCEL'):  # Call terminated before connected (this almost impossible because call will be answered in 10-20 ms)
-				self.sip_send(self.build_resp(SS_OK))  # OK for CANCEL
-				self.sip_send(self.build_resp(SS_REQUEST_TERMINATED))  # REQUEST_TERMINATED for INVITE
-				if ((self.state == common.PS_RINGING) and (call_id == self.call_id)):
+				if (self.state == common.PS_RINGING):
+					self.sip_send(self.build_resp(SS_OK))  # OK for CANCEL
+					self.sip_send(self.build_resp(SS_REQUEST_TERMINATED))  # REQUEST_TERMINATED for INVITE
 					self.state = common.PS_CANCELING
 			elif (msg.method == 'ACK'):
-				if (call_id == self.call_id):  # call already initiated
-					if (self.state == common.PS_RINGING):
-						self.rtp_start()
-						if (common.IP_PHONE_CID_IS_NUMBER):
-							li = len(self.ip_cid)
-							if (li > 0):
-								self.dtmf = self.ip_cid
-								i = 0
-								while (i < li):
-									if (self.ip_cid[i] not in common.DTMF_DIGITS):  # check all characters are DTMF digits (includig #*ABCD)
-										self.dtmf = ''  # clear and exit if not
-										break
-									i += 1
-						self.state = common.PS_CONNECTED
-					elif (self.state == common.PS_CANCELING):
-						self.delete_call()
+				if (self.state == common.PS_RINGING):
+					self.rtp_start()
+					if (common.IP_PHONE_CID_IS_NUMBER):
+						li = len(self.ip_cid)
+						if (li > 0):
+							self.dtmf = self.ip_cid
+							i = 0
+							while (i < li):
+								if (self.ip_cid[i] not in common.DTMF_DIGITS):  # check all characters are DTMF digits (includig #*ABCD)
+									self.dtmf = ''  # clear and exit if not
+									break
+								i += 1
+					self.state = common.PS_CONNECTED
+				elif (self.state == common.PS_CANCELING):
+					self.delete_call()
 			else:
 				self.unhandled_SIP_message(':ip_phone.handler: SIP_REQUEST')
 		else:  # SIP_RESPONSE
-			if (call_id == self.call_id):  # call already initiated
-				self.other_tag = msg.headers['To']['tag']
-				if ('Contact' in msg.headers):
-					first = msg.headers['Contact'].split('sip:')
-					second = first[1].split('>')
-					if (len(second) > 1):
-						self.other_contact = second[0]
-					else:
-						self.other_contact = second
-				if (msg.status == SS_OK):
-					if (self.state == common.PS_DIALING):
-						self.answer_timer = 0
-						self.create_rtp_clients()
-						self.sip_send(self.build_req('ACK_200'))
-						self.rtp_start()
-						self.state = common.PS_CONNECTED
-					elif (self.state == common.PS_HANGINGUP):
-						self.delete_call()
-					elif (self.state == common.PS_CANCELING):
+			self.other_tag = msg.headers['To']['tag']
+			if (msg.status == SS_OK):
+				if (self.state == common.PS_DIALING):
+					self.answer_timer = 0
+					self.create_rtp_clients()
+					self.branch = self.gen_branch()
+					self.sip_send(self.build_req('ACK'))
+					self.rtp_start()
+					self.state = common.PS_CONNECTED
+				elif (self.state == common.PS_HANGINGUP):
+					self.delete_call()
+				elif (self.state == common.PS_CANCELING):
+					self.response_timer = time.time() + common.RESPONSE_TIMEOUT
+					self.state = common.PS_DELETING
+				elif (self.state == common.PS_DELETING):  # needs to wait got two responses: SS_OK and SS_REQUEST_TERMINATED
+					self.delete_call()
+			elif ((msg.status == SS_UNAUTHORIZED) or (msg.status == SS_FORBIDDEN) or (msg.status == SS_PROXY_AUTHENTICATION_REQUIRED)):
+				if (self.state == common.PS_DIALING):
+					if (self.request_counter < self.retry):
+						self.auth_cause = msg.status
+						self.realm = msg.authentication['realm']
+						self.nonce = msg.authentication['nonce']
+						if ('qop' in msg.authentication):
+							self.qop = msg.authentication['qop']
+						if ('opaque' in msg.authentication):
+							self.opaque = msg.authentication['opaque']
+						if (msg.status == SS_PROXY_AUTHENTICATION_REQUIRED):
+							self.sip_send(self.build_req('ACK'))
 						self.response_timer = time.time() + common.RESPONSE_TIMEOUT
-						self.state = common.PS_DELETING
-					elif (self.state == common.PS_DELETING):  # needs to wait got two responses: SS_OK and SS_REQUEST_TERMINATED
+						self.sip_send(self.build_req('INVITE'))
+					else:
+						common.error(f':ip_phone.handler: Error! Call unauthorized! Invalid credentials for {self.username}@{self.domain}')
 						self.delete_call()
-				elif ((msg.status == SS_UNAUTHORIZED) or (msg.status == SS_FORBIDDEN) or (msg.status == SS_PROXY_AUTHENTICATION_REQUIRED)):
-					if (self.state == common.PS_DIALING):
-						if (self.request_counter < self.retry):
-							self.auth_cause = msg.status
-							self.realm = msg.authentication['realm']
-							self.nonce = msg.authentication['nonce']
-							if ('qop' in msg.authentication):
-								self.qop = msg.authentication['qop']
-							if ('opaque' in msg.authentication):
-								self.opaque = msg.authentication['opaque']
-							if (msg.status == SS_PROXY_AUTHENTICATION_REQUIRED):
-								self.sip_send(self.build_req('ACK'))
-							self.response_timer = time.time() + common.RESPONSE_TIMEOUT
-							self.sip_send(self.build_req('INVITE'))
-						else:
-							common.error(f':ip_phone.handler: Error! Call unauthorized! Invalid credentials for {self.username}@{self.domain}')
-							self.delete_call()
-				elif ((msg.status == SS_TRYING) or (msg.status == SS_PUSH_SENT) or (msg.status == SS_RINGING)):
-					pass
-				elif ((msg.status == SS_TEMPORARILY_UNAVAILABLE) or (msg.status == SS_BUSY_HERE) or (msg.status == SS_DECLINE)):
+			elif ((msg.status == SS_TRYING) or (msg.status == SS_PUSH_SENT) or (msg.status == SS_RINGING)):
+				pass
+			elif ((msg.status == SS_TEMPORARILY_UNAVAILABLE) or (msg.status == SS_BUSY_HERE) or (msg.status == SS_DECLINE)):
+				self.sip_send(self.build_req('ACK'))
+				self.delete_call()
+			elif (msg.status == SS_REQUEST_TERMINATED):
+				if (self.state == common.PS_CANCELING):
+					self.response_timer = time.time() + common.RESPONSE_TIMEOUT
+					self.state = common.PS_DELETING
+					self.sip_send(self.build_req('ACK'))
+				elif (self.state == common.PS_DELETING):  # needs to wait got two responses: SS_OK and SS_REQUEST_TERMINATED
 					self.sip_send(self.build_req('ACK'))
 					self.delete_call()
-				elif (msg.status == SS_REQUEST_TERMINATED):
-					if (self.state == common.PS_CANCELING):
-						self.response_timer = time.time() + common.RESPONSE_TIMEOUT
-						self.state = common.PS_DELETING
-						self.sip_send(self.build_req('ACK'))
-					elif (self.state == common.PS_DELETING):  # needs to wait got two responses: SS_OK and SS_REQUEST_TERMINATED
-						self.sip_send(self.build_req('ACK'))
-						self.delete_call()
-				elif (msg.status == SS_CALL_OR_TRANSACTION_DOESNT_EXIST):
-					self.delete_call()
-				elif (msg.status == SS_BAD_REQUEST):
-					common.error(f':ip_phone.handler: Error! Received SIP BAD_REQUEST Message!')
-					self.delete_call()
-				elif (msg.status == SS_NOT_FOUND):
-					common.error(f':ip_phone.handler: Error! IP Phone number not found!')
-					self.delete_call()
-				elif (msg.status == SS_SERVICE_UNAVAILABLE):  # not checking call_id, because may already be disconnected and deleted
-					common.error(f':ip_phone.handler: Error! VoIP Service Unavailable!')
-					self.delete_call()
-				else:
-					self.unhandled_SIP_message(':ip_phone.handler: SIP_RESPONSE')
-			else:  # unknown call_id
-				self.unhandled_SIP_message(':ip_phone.handler: SIP_RESPONSE -Unknown call-')
+			elif (msg.status == SS_CALL_OR_TRANSACTION_DOESNT_EXIST):
+				self.delete_call()
+			elif (msg.status == SS_BAD_REQUEST):
+				common.error(f':ip_phone.handler: Error! Received SIP BAD_REQUEST Message!')
+				self.delete_call()
+			elif (msg.status == SS_NOT_FOUND):
+				common.error(f':ip_phone.handler: Error! IP Phone number not found!')
+				self.delete_call()
+			elif (msg.status == SS_SERVICE_UNAVAILABLE):  # not checking call_id, because may already be disconnected and deleted
+				common.error(f':ip_phone.handler: Error! VoIP Service Unavailable!')
+				self.delete_call()
+			else:
+				self.unhandled_SIP_message(':ip_phone.handler: SIP_RESPONSE')
 
 	def unhandled_SIP_message(self, source: str) -> None:
 		pass
@@ -634,13 +634,9 @@ class IPPhone:
 		return req.encode('utf8')
 
 	def build_req(self, req_type: str) -> str:  # ACK, CANCEL and BYE
-		a = False
 		if ((req_type == 'BYE') or (req_type == 'INVITE')):
 			self.branch = self.gen_branch()
 			self.request_counter += 1
-		if (req_type == 'ACK_200'):
-			req_type = 'ACK'
-			a = True
 		if (req_type == 'CANCEL'):
 			self.other_tag = ''
 		body = ''
@@ -649,12 +645,7 @@ class IPPhone:
 			body = self.build_sdp_body()
 		b = len(body)
 		req = f'{req_type} sip:{self.other_contact} SIP/2.0\r\n'
-		req += f'Via: SIP/2.0/UDP {self.phone_ip}:{self.phone_port};branch='
-		if (a):
-			req += f'{self.gen_branch()}'
-		else:
-			req += f'{self.branch}'
-		req += f'\r\n'
+		req += f'Via: SIP/2.0/UDP {self.phone_ip}:{self.phone_port};branch={self.branch}\r\n'
 		if (self.msg != None):
 			req += self.build_route()
 			if ('Max-Forwards'in self.msg.headers):

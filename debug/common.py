@@ -5,9 +5,9 @@
 
 import time
 
-DEBUGPRINT = True  # print debug messages to default output. (when in service mode in linux systems, system uses service's log file)
+DEBUGPRINT = False  # print debug messages to default output. (when in service mode in linux systems, system uses service's log file)
 # when you use 'undebug.bat' and cleaned all debug lines from code, only errors will be printed to related output even DEBUGPRINT is true.
-DEBUGFILE = True  # print debug messages to debug.log file too. (when in service mode in linux systems, system uses service's log file. So, this will be duplicate)
+DEBUGFILE = False  # print debug messages to debug.log file too. (when in service mode in linux systems, system uses service's log file. So, this will be duplicate)
 WITHTIME = False  # add time ticker to debug messages  (when in service mode in linux systems, system uses service's log file. So, this will be duplicate)
 
 if (DEBUGFILE):
