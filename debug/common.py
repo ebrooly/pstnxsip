@@ -58,6 +58,9 @@ ANSWER_AFTER_RINGS = 1  # if pstnxsip is using as a parallel phone and first pri
 REGISTER_EXPIRES = 60
 
 # PSTN Line parameters
+MM_CONEXANT = 1
+MM_USR = 2  # USR 5637 MAY NOT BE SUPPORT VOICE MODE AND/OR FULL-DUPLEX VOICE
+MODEM_MFG = MM_CONEXANT
 MODEM_PORT = '/dev/ttyACM0'  # Modem port for 'serial' module (in Line object)
 # when pstnxsip running on linux you can find it in /dev folder using command: ls /dev/ttyA*
 # when pstnxsip running on windows you can find it in Device Manager/Com Ports as 'COMX' form

@@ -49,11 +49,11 @@ def start_cross_conn() -> None:
 
 def stop_cross_conn() -> None:
 	global cross_connected, ip_phone, line, line_number, ip_number, session_timer, dial_timer, resp_timer, call_from
-	line.stop_voice_mode()
 	ip_phone.hangup()
 	stop_play_file()
 	if (common.RECORDING_ENABLED):
 		stop_record_file()
+	line.stop_voice_mode()
 	line_number = ''
 	ip_number = ''
 	session_timer = 0
@@ -158,12 +158,12 @@ def main_handler() -> None:
 			if ((dtmf != '') and (dtmf in common.DTMF_DIGITS)):  # DTMF tone from IP phone, send DTMF code to PSTN
 				line.send_dtmf(dtmf)
 	elif (call_from == FROM_IP):  # handle call initiated from IP
-		audio_data = ip_phone.read_audio()  # empty IP phone receive buffer
-		audio_data = line.read_audio()  # empty line receive buffer
+		# audio_data = line.read_audio()  # empty line receive buffer
 		if (ip_phone.state == common.PS_IDLE):  # call hanged-up
 			stop_cross_conn()
 			return
 		if (ip_phone.state == common.PS_CONNECTED):  #  call connected
+			audio_data = ip_phone.read_audio()  # empty IP phone receive buffer
 			if (dial_timer == 0):  # IP call connected, will be waiting for IP phone to dial a number
 				resp_timer = 0
 				line_number = ''
@@ -194,16 +194,17 @@ def main_handler() -> None:
 				resp_timer = 0
 				ip_phone.hangup()
 	elif (call_from == FROM_PSTN):  # handle call initiated from PSTN
-		audio_data = ip_phone.read_audio()  # empty IP phone receive buffer
-		audio_data = line.read_audio()  # empty line receive buffer
-		if (line.state != common.PS_CONNECTED):  # PSTN line session disconnected
-			stop_cross_conn()
-			return
+		# audio_data = ip_phone.read_audio()  # empty IP phone receive buffer
+		if (line.state == common.PS_CONNECTED):  # if PSTN line in voice mode
+			audio_data = line.read_audio()  # empty line receive buffer
 		if (ip_phone.state == common.PS_CONNECTED):  # Call answered
 			start_cross_conn()
 			return
 		if (resp_timer != 0):
 			if (time.time() > resp_timer):  # Call not answered
+				stop_cross_conn()
+				return
+			elif (line.state == common.PS_IDLE):  # PSTN line session disconnected
 				stop_cross_conn()
 				return
 			elif (ip_phone.state == common.PS_IDLE):  # Call rejected/busy
@@ -212,6 +213,9 @@ def main_handler() -> None:
 		if (dial_timer != 0):  # IP call connected, will be waiting for PSTN phone to dial a number (if can dial)
 			if (time.time() > dial_timer):  # if Line not dialed a number (timeout)
 				stop_cross_conn()  # even if not started (initializes all parameters)
+				return
+			if (line.state != common.PS_CONNECTED):  # PSTN line session disconnected
+				stop_cross_conn()
 				return
 			dtmf = line.read_dtmf()	# last pressed key
 			if ((dtmf != '') and (dtmf in common.DTMF_DIGITS)):  # get digits
@@ -231,20 +235,20 @@ def main_handler() -> None:
 		resp_timer = time.time() + common.RESPONSE_TIMEOUT
 		call_from = FROM_IP
 		ip_phone.answer()
-	elif (line.state == common.PS_RINGING):
-		if (line.ring_counter == common.ANSWER_AFTER_RINGS):  # wait for a call initiated from line
-			line_number = line.read_caller_id()  # get caller ID
-			call_from = FROM_PSTN
-			line.start_voice_mode()
-			if ((common.LOCAL_PBX) and (common.LINE_CAN_DIAL)):  # inbound PSTN calls can dial only when LOCAL_PBX and LINE_CAN_DIAL are True
+	elif (line.state == common.PS_RINGING):  # wait for a call initiated from line
+		if ((common.LOCAL_PBX) and (common.LINE_CAN_DIAL)):  # inbound PSTN calls can dial only when LOCAL_PBX and LINE_CAN_DIAL are True
+			if (line.ring_counter == common.ANSWER_AFTER_RINGS):
+				call_from = FROM_PSTN
+				line.start_voice_mode()
 				ip_number = ''
 				dial_timer =  time.time() + common.DIAL_TIMEOUT
 				start_play_file('dial.wav')
-			else:
-				resp_timer = time.time() + common.ANSWER_TIMEOUT
-				start_play_file('ringback.wav')
-				ip_number = common.CALL_FORWARD_TO
-				ip_phone.call(line_number, ip_number)  # call IP phone
+		else:
+			call_from = FROM_PSTN
+			line_number = line.read_caller_id()  # get caller ID
+			resp_timer = time.time() + common.ANSWER_TIMEOUT
+			ip_number = common.CALL_FORWARD_TO
+			ip_phone.call(line_number, ip_number)  # call IP phone
 
 if __name__ == '__main__':
 	atexit.register(close_connections)
